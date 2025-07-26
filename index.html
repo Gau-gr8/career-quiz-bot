@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Quiz Bot</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 3xl; /* Max width for larger screens */
+            width: 100%;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .question-section {
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Single column for mobile */
+            gap: 1rem;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+        @media (min-width: 640px) { /* Small screens and up */
+            .options-grid {
+                grid-template-columns: repeat(2, 1fr); /* Two columns for larger screens */
+            }
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center content within option */
+            padding: 1rem;
+            border: 2px solid #e2e8f0; /* Light border */
+            border-radius: 0.75rem; /* Rounded corners for options */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            text-align: center;
+            min-height: 4rem; /* Ensure consistent height */
+        }
+        .option-label:hover {
+            border-color: #6366f1; /* Indigo on hover */
+            background-color: #e0e7ff; /* Light indigo background on hover */
+        }
+        .option-input:checked + .option-label {
+            background-color: #6366f1; /* Indigo background when checked */
+            color: #ffffff; /* White text when checked */
+            border-color: #6366f1;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .option-input {
+            display: none; /* Hide default radio button */
+        }
+        .button-primary {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .button-primary:hover {
+            background-color: #4338ca; /* Indigo 700 */
+            transform: translateY(-1px);
+        }
+        .button-primary:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .button-secondary {
+            background-color: #e2e8f0; /* Gray 200 */
+            color: #4a5568; /* Gray 700 */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .button-secondary:hover {
+            background-color: #cbd5e0; /* Gray 300 */
+            transform: translateY(-1px);
+        }
+        .button-secondary:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .result-section {
+            width: 100%;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .feedback-box {
+            background-color: #eff6ff; /* Light blue */
+            border: 2px solid #93c5fd; /* Blue border */
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            color: #1e40af; /* Dark blue text */
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="quiz-container bg-white rounded-2xl shadow-xl p-8 max-w-3xl w-full flex flex-col items-center text-center">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-4">Career Explorer Quiz</h1>
+        <p class="text-lg text-gray-600 mb-8">Answer a few questions to get personalized suggestions for your career path!</p>
+
+        <!-- Quiz Section -->
+        <div id="quiz-section" class="question-section w-full">
+            <h2 id="question-text" class="text-2xl font-semibold text-gray-800 mb-6"></h2>
+            <div id="options-container" class="options-grid">
+                <!-- Options will be dynamically loaded here -->
+            </div>
+            <div class="mt-8 flex justify-center space-x-4">
+                <button id="prev-button" class="button-secondary hidden">Previous</button>
+                <button id="next-button" class="button-primary">Next</button>
+                <button id="submit-button" class="button-primary hidden">Submit</button>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="result-section" class="result-section hidden w-full">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-4">Your Career Suggestion:</h2>
+            <p id="suggested-career" class="text-4xl font-extrabold text-indigo-900 mb-6"></p>
+            <div id="career-feedback" class="feedback-box">
+                <!-- Personalized feedback will be loaded here -->
+            </div>
+            <button id="restart-button" class="button-primary mt-8">Retake Quiz</button>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500"></div>
+            <p class="text-white text-xl ml-4">Analyzing your interests...</p>
+        </div>
+    </div>
+
+    <script>
+        // Define the quiz questions and their impact on career scores
+        const questions = [
+            {
+                question: "What kind of tasks do you enjoy most?",
+                options: [
+                    { text: "Solving complex problems and building things.", value: "A", careerImpact: { Technology: 2, Science: 1 } },
+                    { text: "Expressing ideas through art, writing, or design.", value: "B", careerImpact: { CreativeArts: 2 } },
+                    { text: "Organizing, planning, and leading projects.", value: "C", careerImpact: { Business: 2 } },
+                    { text: "Helping people and improving their well-being.", value: "D", careerImpact: { Healthcare: 2, SocialServices: 1 } }
+                ]
+            },
+            {
+                question: "When faced with a new challenge, your first instinct is to:",
+                options: [
+                    { text: "Research and analyze data to find a logical solution.", value: "A", careerImpact: { Science: 2, Technology: 1 } },
+                    { text: "Brainstorm creative and unconventional approaches.", value: "B", careerImpact: { CreativeArts: 2 } },
+                    { text: "Develop a strategic plan and delegate tasks.", value: "C", careerImpact: { Business: 2 } },
+                    { text: "Empathize with those affected and offer support.", value: "D", careerImpact: { Healthcare: 2, SocialServices: 1 } }
+                ]
+            },
+            {
+                question: "Which subject did you enjoy most in school?",
+                options: [
+                    { text: "Math and Physics.", value: "A", careerImpact: { Technology: 2, Science: 2 } },
+                    { text: "Art and Literature.", value: "B", careerImpact: { CreativeArts: 2 } },
+                    { text: "Economics and Business Studies.", value: "C", careerImpact: { Business: 2 } },
+                    { text: "Biology and Chemistry.", value: "D", careerImpact: { Healthcare: 2, Science: 1 } }
+                ]
+            },
+            {
+                question: "What kind of environment do you prefer?",
+                options: [
+                    { text: "A fast-paced, innovative environment.", value: "A", careerImpact: { Technology: 2, Business: 1 } },
+                    { text: "A flexible environment where creativity is encouraged.", value: "B", careerImpact: { CreativeArts: 2 } },
+                    { text: "A structured environment with clear goals.", value: "C", careerImpact: { Business: 2 } },
+                    { text: "A collaborative environment focused on helping others.", value: "D", careerImpact: { Healthcare: 2, SocialServices: 1 } }
+                ]
+            },
+            {
+                question: "What motivates you the most?",
+                options: [
+                    { text: "Innovation and making new discoveries.", value: "A", careerImpact: { Technology: 2, Science: 2 } },
+                    { text: "Self-expression and making an impact through your work.", value: "B", careerImpact: { CreativeArts: 2 } },
+                    { text: "Achievement and leading successful ventures.", value: "C", careerImpact: { Business: 2 } },
+                    { text: "Contributing to the well-being of society.", value: "D", careerImpact: { Healthcare: 2, SocialServices: 1 } }
+                ]
+            },
+            {
+                question: "How do you prefer to learn new skills?",
+                options: [
+                    { text: "By experimenting and building projects.", value: "A", careerImpact: { Technology: 2, Science: 1 } },
+                    { text: "By observing and practicing creative techniques.", value: "B", careerImpact: { CreativeArts: 2 } },
+                    { text: "By studying theories and case studies.", value: "C", careerImpact: { Business: 2 } },
+                    { text: "By interacting with experts and getting hands-on experience.", value: "D", careerImpact: { Healthcare: 2, SocialServices: 1 } }
+                ]
+            },
+            {
+                question: "Which of these sounds most appealing for a typical workday?",
+                options: [
+                    { text: "Working with data, algorithms, or complex systems.", value: "A", careerImpact: { Technology: 2, Science: 1 } },
+                    { text: "Creating original content, designs, or performances.", value: "B", careerImpact: { CreativeArts: 2 } },
+                    { text: "Managing teams, resources, and strategic initiatives.", value: "C", careerImpact: { Business: 2 } },
+                    { text: "Directly assisting individuals or communities in need.", value: "D", careerImpact: { Healthcare: 2, SocialServices: 2 } }
+                ]
+            },
+            {
+                question: "Tell us more about your interests, passions, or what you envision for your ideal career. (Optional, but helps with personalized feedback!)",
+                type: "text_input", // Custom type to indicate text input
+                id: "free-text-input" // A unique ID for the text area
+            }
+        ];
+
+        // Personalized feedback for each career field
+        const careerFeedback = {
+            Technology: {
+                title: "Technology & Innovation",
+                description: "You have a strong aptitude for problem-solving, logical thinking, and innovation. Careers in technology, such as software development, data science, cybersecurity, or engineering, could be a great fit. You'd thrive in roles that involve designing, building, and optimizing systems and solutions."
+            },
+            CreativeArts: {
+                title: "Creative Arts & Design",
+                description: "Your strengths lie in imagination, self-expression, and aesthetic appreciation. Consider careers in creative fields like graphic design, writing, fine arts, music, film, or fashion. You'd likely enjoy roles where you can bring new ideas to life and communicate through various artistic mediums."
+            },
+            Business: {
+                title: "Business & Management",
+                description: "You possess leadership qualities, strategic thinking, and a knack for organization. Careers in business, such as management, marketing, finance, entrepreneurship, or consulting, might suit you. You'd excel in roles that involve planning, decision-making, and driving organizational success."
+            },
+            Healthcare: {
+                title: "Healthcare & Wellness",
+                description: "Your empathetic nature and desire to help others make you well-suited for healthcare professions. Consider careers like nursing, medicine, therapy, public health, or counseling. You'd find fulfillment in roles that directly contribute to the health and well-being of individuals and communities."
+            },
+            Science: {
+                title: "Science & Research",
+                description: "You have a curious mind, a love for discovery, and an analytical approach. Careers in science, such as research, biology, chemistry, physics, or environmental science, could be ideal. You'd enjoy roles that involve exploring the unknown, conducting experiments, and contributing to scientific knowledge."
+            },
+            SocialServices: {
+                title: "Social Services & Community Impact",
+                description: "Your compassion and dedication to societal improvement point towards a career in social services. Consider roles in social work, non-profit management, community development, or education. You'd be passionate about advocating for others and creating positive change in the world."
+            }
+        };
+
+        // DOM elements
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const prevButton = document.getElementById('prev-button');
+        const submitButton = document.getElementById('submit-button');
+        const quizSection = document.getElementById('quiz-section');
+        const resultSection = document.getElementById('result-section');
+        const suggestedCareer = document.getElementById('suggested-career');
+        const careerFeedbackDiv = document.getElementById('career-feedback');
+        const restartButton = document.getElementById('restart-button');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        // Quiz state
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null); // Store selected option value for each question
+        let careerScores = {}; // Object to accumulate scores for different career fields
+
+        /**
+         * Initializes the quiz by setting up event listeners and displaying the first question.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            nextButton.addEventListener('click', nextQuestion);
+            prevButton.addEventListener('click', prevQuestion);
+            submitButton.addEventListener('click', submitQuiz);
+            restartButton.addEventListener('click', resetQuiz);
+            displayQuestion();
+        });
+
+        /**
+         * Displays the current question and its options.
+         * Updates button visibility based on the current question index.
+         */
+        function displayQuestion() {
+            const question = questions[currentQuestionIndex];
+            questionText.textContent = question.question;
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            if (question.type === "text_input") {
+                const textarea = document.createElement('textarea');
+                textarea.id = question.id; // Assign the ID
+                textarea.className = 'w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700 resize-y';
+                textarea.rows = 6;
+                textarea.placeholder = "Type here (e.g., 'I love working with data and solving complex puzzles...', or 'I'm passionate about art and helping people express themselves.')";
+                optionsContainer.appendChild(textarea);
+
+                // Restore previous text if available
+                if (userAnswers[currentQuestionIndex]) {
+                    textarea.value = userAnswers[currentQuestionIndex];
+                }
+
+                // Hide next button for this question, only submit
+                nextButton.classList.add('hidden');
+                prevButton.classList.toggle('hidden', currentQuestionIndex === 0);
+                submitButton.classList.remove('hidden');
+
+            } else {
+                // Existing radio button rendering logic
+                question.options.forEach(option => {
+                    const inputId = `option-${option.value}`;
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <input type="radio" id="${inputId}" name="answer" value="${option.value}" class="option-input" />
+                        <label for="${inputId}" class="option-label">${option.text}</label>
+                    `;
+                    optionsContainer.appendChild(div);
+                });
+
+                // Pre-select the user's previous answer if available
+                const selectedValue = userAnswers[currentQuestionIndex];
+                if (selectedValue) {
+                    const radio = document.querySelector(`input[name="answer"][value="${selectedValue}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                    }
+                }
+
+                // Update button visibility for standard questions
+                prevButton.classList.toggle('hidden', currentQuestionIndex === 0);
+                nextButton.classList.toggle('hidden', currentQuestionIndex === questions.length - 1);
+                submitButton.classList.toggle('hidden', currentQuestionIndex !== questions.length - 1);
+            }
+        }
+
+        /**
+         * Handles moving to the next question.
+         * Stores the selected answer and updates career scores.
+         */
+        function nextQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            if (currentQuestion.type === "text_input") {
+                const textarea = document.getElementById(currentQuestion.id);
+                userAnswers[currentQuestionIndex] = textarea.value.trim(); // Store text input
+                // No validation needed here, it's optional
+            } else {
+                const selectedOption = document.querySelector('input[name="answer"]:checked');
+                if (!selectedOption) {
+                    alert("Please select an option before proceeding!");
+                    return;
+                }
+                userAnswers[currentQuestionIndex] = selectedOption.value;
+            }
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+            }
+        }
+
+        /**
+         * Handles moving to the previous question.
+         */
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        /**
+         * Calculates the final career suggestion based on accumulated scores
+         * and displays the results.
+         */
+        async function submitQuiz() { // Make it async
+            const currentQuestion = questions[currentQuestionIndex];
+
+            // Handle the last question's input (which could be text or radio)
+            if (currentQuestion.type === "text_input") {
+                const textarea = document.getElementById(currentQuestion.id);
+                userAnswers[currentQuestionIndex] = textarea.value.trim();
+            } else {
+                const selectedOption = document.querySelector('input[name="answer"]:checked');
+                if (!selectedOption) {
+                    alert("Please select an option before submitting!");
+                    return;
+                }
+                userAnswers[currentQuestionIndex] = selectedOption.value;
+            }
+
+            // Show loading spinner
+            loadingSpinner.classList.remove('hidden');
+
+            const freeTextInput = userAnswers[questions.length - 1]; // Get the text from the last question
+
+            if (freeTextInput) {
+                // Use your Python Backend for NLP-driven suggestion
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/analyze_interests', { // Your Python backend URL
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            free_text_input: freeTextInput,
+                            // You could also send other quiz answers if your Python backend needs them
+                            // quiz_answers: userAnswers.slice(0, questions.length - 1) // Uncomment if you want to send all answers
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    // Use the result from your Python backend
+                    suggestedCareer.textContent = result.suggested_career;
+                    careerFeedbackDiv.textContent = result.description;
+
+                } catch (error) {
+                    console.error("Error calling Python backend:", error);
+                    // Fallback to score-based if backend call fails
+                    calculateAndDisplayScoreBasedSuggestion();
+                } finally {
+                    loadingSpinner.classList.add('hidden'); // Hide spinner
+                }
+            } else {
+                // If no free text input, proceed with score-based calculation
+                calculateAndDisplayScoreBasedSuggestion();
+                loadingSpinner.classList.add('hidden'); // Hide spinner immediately
+            }
+
+            quizSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+        }
+
+        /**
+         * Calculates the final career suggestion based on accumulated scores
+         * and displays the results. This is the original logic.
+         */
+        function calculateAndDisplayScoreBasedSuggestion() {
+            // Reset career scores for a fresh calculation
+            careerScores = {};
+
+            // Calculate total scores for each career field
+            userAnswers.forEach((answerValue, index) => {
+                // Skip the text_input question for score calculation
+                if (questions[index].type !== "text_input" && answerValue) {
+                    const question = questions[index];
+                    const selectedOptionData = question.options.find(opt => opt.value === answerValue);
+                    if (selectedOptionData && selectedOptionData.careerImpact) {
+                        for (const career in selectedOptionData.careerImpact) {
+                            if (selectedOptionData.careerImpact.hasOwnProperty(career)) {
+                                careerScores[career] = (careerScores[career] || 0) + selectedOptionData.careerImpact[career];
+                            }
+                        }
+                    }
+                }
+            });
+
+            const suggestion = getCareerSuggestionFromScores(); // New function for score-based
+            suggestedCareer.textContent = suggestion.title;
+            careerFeedbackDiv.textContent = suggestion.description;
+        }
+
+        /**
+         * Determines the best career field based on the accumulated scores.
+         * @returns {Object} An object containing the title and description of the suggested career.
+         */
+        function getCareerSuggestionFromScores() { // Renamed from getCareerSuggestion
+            let bestCareer = "Unknown";
+            let maxScore = -1;
+
+            // Find the career with the highest score
+            for (const career in careerScores) {
+                if (careerScores.hasOwnProperty(career)) {
+                    if (careerScores[career] > maxScore) {
+                        maxScore = careerScores[career];
+                        bestCareer = career;
+                    }
+                }
+            }
+
+            // If no score is positive, or if there's a tie, provide a general suggestion
+            if (maxScore <= 0 && Object.keys(careerScores).length > 0) {
+                const firstCareerKey = Object.keys(careerScores)[0];
+                return careerFeedback[firstCareerKey] || { title: "Explore Diverse Fields", description: "It seems you have a wide range of interests! Consider exploring various fields like technology, creative arts, business, or healthcare to find what truly resonates with you. Internships and informational interviews can be very helpful." };
+            } else if (maxScore <= 0) {
+                 return { title: "Explore Diverse Fields", description: "It seems you have a wide range of interests! Consider exploring various fields like technology, creative arts, business, or healthcare to find what truly resonates with you. Internships and informational interviews can be very helpful." };
+            }
+
+            return careerFeedback[bestCareer] || { title: "Explore Diverse Fields", description: "It seems you have a wide range of interests! Consider exploring various fields like technology, creative arts, business, or healthcare to find what truly resonates with you. Internships and informational interviews can be very helpful." };
+        }
+
+        /**
+         * Resets the quiz to its initial state.
+         */
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            careerScores = {};
+
+            // Clear the text area if it exists
+            const freeTextInputElement = document.getElementById('free-text-input');
+            if (freeTextInputElement) {
+                freeTextInputElement.value = '';
+            }
+
+            resultSection.classList.add('hidden');
+            quizSection.classList.remove('hidden');
+            displayQuestion();
+        }
+
+        // Custom alert function to avoid window.alert()
+        function alert(message) {
+            const existingAlert = document.getElementById('custom-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'custom-alert';
+            alertDiv.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50';
+            alertDiv.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm w-full">
+                    <p class="text-lg font-semibold text-gray-800 mb-4">${message}</p>
+                    <button id="alert-ok-button" class="button-primary px-6 py-2">OK</button>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+
+            document.getElementById('alert-ok-button').addEventListener('click', () => {
+                alertDiv.remove();
+            });
+        }
+
+    </script>
+</body>
+</html>
